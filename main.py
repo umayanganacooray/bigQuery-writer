@@ -37,7 +37,7 @@ def transform_issue(issue):
         "issue_title" : issue.get("title"),
         "created_time" : convert_to_my_datetime(issue.get("created_at")),
         "labels" : [label["name"] for label in issue.get("labels", [])],
-        "assignees" : issue.get("assignees"),
+        "assignees" : ", ".join([assignees.get("name", "") for assignees in issue.get("assignees", [])]),
         "state" : issue.get("state"),
         "state_reason" : issue.get("state_reason"),
         "closed_time" : convert_to_my_datetime(issue.get("closed_at"))
@@ -70,8 +70,7 @@ def main():
     page = 1
     
     path = "/search/issues"
-    #query = "q=repo:wso2-enterprise/choreo+is:issue"
-    query = "q=repo:umayanganacooray/githubApp+is:issue"
+    query = "q=repo:wso2-enterprise/choreo+is:issue"
     
     values = []
 
