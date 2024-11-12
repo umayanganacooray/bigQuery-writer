@@ -9,14 +9,14 @@ from google.cloud import bigquery
 from google.oauth2 import service_account  
   
 scopes = ["https://www.googleapis.com/auth/cloud-platform", "https://www.googleapis.com/auth/bigquery"]
-project = os.getenv("GCLOUD_PROJECT")
-dataset = os.getenv("GCLOUD_DATASET")
-serviceURL = os.getenv("CHOREO_GITHUB_CONNECTION_FOR_ISSUE_EXTRACT_SERVICEURL")
-GITHUB_PAT = os.getenv("CHOREO_GITHUB_CONNECTION_FOR_ISSUE_EXTRACT_GITHUB_PAT")
+project = os.getenv("CHOREO_BIGQUERY_CONNECTION_FOR_CHOREO_ISSUES_GCLOUD_PROJECT")
+dataset = os.getenv("CHOREO_BIGQUERY_CONNECTION_FOR_CHOREO_ISSUES_GCLOUD_DATASET")
+serviceURL = os.getenv("CHOREO_GITHUB_SERVICEURL")
+GITHUB_PAT = os.getenv("CHOREO_GITHUB_GITHUB_PAT")
 
 def get_gcloud_account_info():
     try:
-        gcloud_var: str = os.getenv['GCLOUD_ACCOUNT']
+        gcloud_var: str = os.getenv['CHOREO_BIGQUERY_CONNECTION_FOR_CHOREO_ISSUES_GCLOUD_ACCOUNT']
         return json.loads(base64.b64decode(gcloud_var).decode("utf-8"))
     except KeyError:
         print("You must first set the GCLOUD_ACCOUNT environment variable")

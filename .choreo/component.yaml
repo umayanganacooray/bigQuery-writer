@@ -12,5 +12,9 @@ endpoints:
       - Organization
 dependencies:
     connectionReferences:
-    - name: GitHub connection for issue extract
+    - name: GitHub
       resourceRef: thirdparty:Choreo Github Repo/v1
+dependencies:
+    connectionReferences:
+    - name: BigQuery connection for Choreo issues
+      resourceRef: thirdparty:BigQuery/v1
