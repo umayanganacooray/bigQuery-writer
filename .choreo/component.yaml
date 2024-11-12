@@ -1,0 +1,16 @@
+schemaVersion: 1.1
+
+endpoints:
+  - name: github-issues
+    displayName: GitHub Issues
+    service:
+      basePath: /
+      port: 5000
+    type: REST
+    networkVisibilities: 
+      - Public
+      - Organization
+dependencies:
+    connectionReferences:
+    - name: GitHub connection for issue extract
+      resourceRef: thirdparty:Choreo Github Repo/v1
