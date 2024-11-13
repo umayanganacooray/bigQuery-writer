@@ -51,13 +51,23 @@ def insert_data(rows):
         sys.exit(1)
 
     print(f"Inserting {len(rows)} rows into {table}")
+    
+    job_config = bigquery.LoadJobConfig(
+        write_disposition=bigquery.WriteDisposition.WRITE_TRUNCATE  
+    )
 
-    errors = client.insert_rows_json(table, rows)
+    load_job = client.load_table_from_json(rows, table, job_config=job_config)
+    load_job.result()
 
-    if errors:
-        print("Errors occurred while inserting rows: {}".format(errors))
-    else:
-        print("Rows inserted successfully.")        
+    print("Rows inserted successfully.") 
+
+
+
+    # errors = client.insert_rows_json(table, rows)
+    # if errors:
+    #     print("Errors occurred while inserting rows: {}".format(errors))
+    # else:
+    #     print("Rows inserted successfully.")        
 
 
 
