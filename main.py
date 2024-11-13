@@ -16,7 +16,7 @@ GITHUB_PAT = os.getenv("CHOREO_GITHUB_GITHUB_PAT")
 
 def get_gcloud_account_info():
     try:
-        gcloud_var: str = os.getenv['CHOREO_BIGQUERY_CONNECTION_FOR_CHOREO_ISSUES_GCLOUD_ACCOUNT']
+        gcloud_var: str = os.getenv('CHOREO_BIGQUERY_CONNECTION_FOR_CHOREO_ISSUES_GCLOUD_ACCOUNT')
         return json.loads(base64.b64decode(gcloud_var).decode("utf-8"))
     except KeyError:
         print("You must first set the GCLOUD_ACCOUNT environment variable")
@@ -59,15 +59,7 @@ def insert_data(rows):
     load_job = client.load_table_from_json(rows, table, job_config=job_config)
     load_job.result()
 
-    print("Rows inserted successfully.") 
-
-
-
-    # errors = client.insert_rows_json(table, rows)
-    # if errors:
-    #     print("Errors occurred while inserting rows: {}".format(errors))
-    # else:
-    #     print("Rows inserted successfully.")        
+    print("Rows inserted successfully.")     
 
 
 
