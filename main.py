@@ -75,9 +75,9 @@ client = bigquery.Client(project=project, credentials=credentials)
 def main():
     per_page = 100
     page = 1
-    
-    path = "/search/issues"
-    query = "q=repo:wso2-enterprise/choreo+is:issue"
+
+    path = "/repos/wso2-enterprise/choreo/issues"
+    query = "q=state:open"
     
     values = []
 
