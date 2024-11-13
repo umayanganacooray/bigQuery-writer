@@ -24,23 +24,28 @@ def get_gcloud_account_info():
     except binascii.Error:
         print("Error when decoding GCloud credentials")
         sys.exit(1)
-
-def convert_to_my_datetime(github_date):
-    if github_date is None:
-        return None
-    date = datetime.strptime(github_date, "%Y-%m-%dT%H:%M:%SZ")
-    return date.strftime("%Y-%m-%dT%H:%M:%S")
+        
 
 def transform_issue(issue):
+    def filter_labels(labels):
+        filtered_labels = []
+        for label in labels:
+            for keyword in ["Priority", "Area", "Type"]:
+                if keyword in label["name"]:
+                    filtered_labels.append(label["name"])
+                    break 
+        return ", ".join(filtered_labels)
+    
     return {
         "issue_id" : issue.get("id"),
         "issue_title" : issue.get("title"),
-        "created_time" : convert_to_my_datetime(issue.get("created_at")),
-        "labels" : [label["name"] for label in issue.get("labels", [])],
+        "created_time" : issue.get("created_at"),
+        "updated_at" : issue.get("updated_at"),
+        "labels" : filter_labels(issue.get("labels", [])),
         "assignees" : ", ".join([assignees.get("name", "") for assignees in issue.get("assignees", [])]),
         "state" : issue.get("state"),
         "state_reason" : issue.get("state_reason"),
-        "closed_time" : convert_to_my_datetime(issue.get("closed_at"))
+        "closed_time" : issue.get("closed_at")
     }
        
           
@@ -85,14 +90,13 @@ def main():
             print("Failed to get issues:", response.status_code)
             break
 
-        issues = response.json().get("items", [])
+        issues = response.json()
         if not issues:
             break
 
         for issue in issues:
             values.append(transform_issue(issue))
         
-
         page += 1
     insert_data(values)
 
