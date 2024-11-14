@@ -45,7 +45,7 @@ def transform_issue(issue):
         "labels" : [label.get("name", "") for label in issue.get("labels", [])],
         "assignees" : [assignee.get("login", "") for assignee in issue.get("assignees", [])],
         "state" : issue.get("state"),
-        "state_reason" : issue.get("state_reason"),
+        "state_reason" : issue.get("state_reason", None),
         "closed_time" : parse_datetime(issue.get("closed_at")) if issue.get("closed_at") else None
     }
      
