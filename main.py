@@ -44,8 +44,8 @@ def transform_issue(issue):
         "labels" : [label.get("name", "") for label in issue.get("labels", [])],
         "assignees" : [assignee.get("login", "") for assignee in issue.get("assignees", [])],
         "state" : issue.get("state"),
-        "state_reason" : issue.get("state_reason"),
-        "closed_time" : parse_datetime(issue.get("closed_at")) if issue.get("closed_at") else None
+        # "state_reason" : issue.get("state_reason"),
+        "closed_time" : parse_datetime(issue.get("closed_at"))
     }
      
           
@@ -57,10 +57,9 @@ def insert_data(rows):
 
     print(f"Inserting {len(rows)} rows into {table}")
     
-    job_config = bigquery.LoadJobConfig(
-        create_disposition = bigquery.CreateDisposition.CREATE_IF_NEEDED,
-        write_disposition=bigquery.WriteDisposition.WRITE_TRUNCATE,  
-    )
+    job_config = bigquery.LoadJobConfig()
+    job_config.create_disposition = bigquery.CreateDisposition.CREATE_IF_NEEDED
+    job_config.write_disposition=bigquery.WriteDisposition.WRITE_TRUNCATE
     job_config.schema = client.get_table(table).schema
     
     load_job = client.load_table_from_json(rows, table, job_config=job_config)
