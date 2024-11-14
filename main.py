@@ -25,23 +25,18 @@ def get_gcloud_account_info():
         print("Error when decoding GCloud credentials")
         sys.exit(1)
         
+account_info = get_gcloud_account_info()
+credentials = service_account.Credentials.from_service_account_info(account_info, scopes=scopes)
+client = bigquery.Client(project=project, credentials=credentials)
+        
 
-def transform_issue(issue):
-    def filter_labels(labels):
-        filtered_labels = []
-        for label in labels:
-            for keyword in ["Priority", "Area", "Type"]:
-                if keyword in label["name"]:
-                    filtered_labels.append(label["name"])
-                    break 
-        return ", ".join(filtered_labels)
-    
+def transform_issue(issue):    
     return {
         "issue_id" : issue.get("id"),
         "issue_title" : issue.get("title"),
         "created_time" : issue.get("created_at"),
-        "updated_at" : issue.get("updated_at"),
-        "labels" : filter_labels(issue.get("labels", [])),
+        "updated_time" : issue.get("updated_at"),
+        "labels" : ", ".join([labels.get("name", "") for labels in issue.get("labels", [])]),
         "assignees" : ", ".join([assignees.get("name", "") for assignees in issue.get("assignees", [])]),
         "state" : issue.get("state"),
         "state_reason" : issue.get("state_reason"),
@@ -58,21 +53,19 @@ def insert_data(rows):
     print(f"Inserting {len(rows)} rows into {table}")
     
     job_config = bigquery.LoadJobConfig(
-        write_disposition=bigquery.WriteDisposition.WRITE_TRUNCATE  
+        create_disposition = bigquery.CreateDisposition.CREATE_IF_NEEDED,
+        write_disposition=bigquery.WriteDisposition.WRITE_TRUNCATE,  
     )
-
+    job_config.schema = client.get_table(table).schema
+    
     load_job = client.load_table_from_json(rows, table, job_config=job_config)
     load_job.result()
 
     print("Rows inserted successfully.")     
 
 
-
-account_info = get_gcloud_account_info()
-credentials = service_account.Credentials.from_service_account_info(account_info, scopes=scopes)
-client = bigquery.Client(project=project, credentials=credentials)
-
 def main():
+    
     per_page = 100
     page = 1
 
