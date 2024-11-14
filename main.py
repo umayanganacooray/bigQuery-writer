@@ -30,13 +30,12 @@ credentials = service_account.Credentials.from_service_account_info(account_info
 client = bigquery.Client(project=project, credentials=credentials)
         
 
-def parse_datetime(date_string):
-    if date_string:
-        dt = datetime.strptime(date_string, "%Y-%m-%dT%H:%M:%SZ")
-        return dt.isoformat()
-    return None
-
-def transform_issue(issue):    
+def transform_issue(issue):   
+    def parse_datetime(date_string):
+        if date_string:
+            return datetime.strptime(date_string, "%Y-%m-%dT%H:%M:%SZ").strftime("%Y-%m-%dT%H:%M:%S")
+        return None
+ 
     return {
         "issue_id" : issue.get("id"),
         "issue_title" : issue.get("title"),
@@ -45,7 +44,7 @@ def transform_issue(issue):
         "labels" : [label.get("name", "") for label in issue.get("labels", [])],
         "assignees" : [assignee.get("login", "") for assignee in issue.get("assignees", [])],
         "state" : issue.get("state"),
-        "state_reason" : issue.get("state_reason", None),
+        "state_reason" : issue.get("state_reason"),
         "closed_time" : parse_datetime(issue.get("closed_at")) if issue.get("closed_at") else None
     }
      
