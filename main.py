@@ -32,7 +32,8 @@ client = bigquery.Client(project=project, credentials=credentials)
 
 def parse_datetime(date_string):
     if date_string:
-        return datetime.strptime(date_string, "%Y-%m-%dT%H:%M:%SZ")
+        dt = datetime.strptime(date_string, "%Y-%m-%dT%H:%M:%SZ")
+        return dt.isoformat()
     return None
 
 def transform_issue(issue):    
@@ -47,7 +48,7 @@ def transform_issue(issue):
         "state_reason" : issue.get("state_reason"),
         "closed_time" : parse_datetime(issue.get("closed_at")) if issue.get("closed_at") else None
     }
-       
+     
           
 def insert_data(rows):
     table = f"{project}.{dataset}.ISSUE"
