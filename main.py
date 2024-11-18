@@ -37,7 +37,7 @@ def transform_issue(issue):
         return None
  
     return {
-        "issue_id" : issue.get("id"),
+        "issue_id" : issue.get("number"),
         "issue_title" : issue.get("title"),
         "created_time" : parse_datetime(issue.get("created_at")),
         "updated_time" : parse_datetime(issue.get("updated_at")),
@@ -46,7 +46,7 @@ def transform_issue(issue):
         "state" : issue.get("state"),
         # "state_reason" : issue.get("state_reason"),
         "closed_time" : parse_datetime(issue.get("closed_at"))
-    }
+    }  
      
           
 def insert_data(rows):
