@@ -74,7 +74,7 @@ def main():
     page = 1
 
     path = "/repos/wso2-enterprise/choreo/issues"
-    query = "q=state:open"
+    query = "state:all"
     
     values = []
 
@@ -92,6 +92,8 @@ def main():
             break
 
         for issue in issues:
+            if (issue.get("pull_request")):
+                continue
             values.append(transform_issue(issue))
         
         page += 1
