@@ -14,5 +14,5 @@ dependencies:
     connectionReferences:
     - name: GitHub
       resourceRef: thirdparty:Choreo Github Repo/v1
-    - name: BigQuery connection for Choreo issues
+    - name: BigQuery
       resourceRef: thirdparty:BigQuery/v1
