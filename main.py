@@ -74,7 +74,7 @@ def main():
     page = 1
 
     path = "/repos/wso2-enterprise/choreo/issues"
-    query = "state:all"
+    query = "state=all"
     
     values = []
 
