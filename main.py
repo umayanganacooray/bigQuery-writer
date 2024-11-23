@@ -106,7 +106,10 @@ def issue_project_mapping():
     return issue_to_projects
 
 def get_projects_names_for_issue(issue_to_projects, issue_id):
-    return issue_to_projects.get(issue_id, [])
+    if issue_id in issue_to_projects:
+        return issue_to_projects[issue_id]
+    else:
+        return None 
 
 def transform_issue(issue, projects):   
     def parse_datetime(date_string):
@@ -126,7 +129,7 @@ def transform_issue(issue, projects):
         "closed_time" : parse_datetime(issue.get("closed_at")),
         "projects" : projects
     }
- 
+
 def insert_data(rows):
     table = f"{project}.{dataset}.ISSUE"
     if len(rows) == 0:
@@ -134,7 +137,7 @@ def insert_data(rows):
         sys.exit(1)
 
     print(f"Inserting {len(rows)} rows into {table}")
-    
+
     job_config = bigquery.LoadJobConfig()
     job_config.create_disposition = bigquery.CreateDisposition.CREATE_IF_NEEDED
     job_config.write_disposition=bigquery.WriteDisposition.WRITE_TRUNCATE
@@ -143,18 +146,19 @@ def insert_data(rows):
     load_job = client.load_table_from_json(rows, table, job_config=job_config)
     load_job.result()
 
-    print("Rows inserted successfully.")     
-
-
+    print("Rows inserted successfully.")  
+    
+    
 def main():
+    
     issue_to_projects = issue_project_mapping()
     
     per_page = 100
     page = 1
-
+    
     path = "/repos/wso2-enterprise/choreo/issues"
     query = "state=all"
-    
+      
     values = []
 
     while True:
