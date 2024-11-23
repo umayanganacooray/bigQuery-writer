@@ -61,14 +61,14 @@ def build_project_structure():
     project_structure = {}
     projects = get_projects()
     for project in projects:
-        project_id = project["id"]
-        project_name = project["name"]
+        project_id = project.get("id")
+        project_name = project.get("name")
         project_structure[project_id] = {"project_name": project_name, "columns": {}}
 
         columns = get_columns(project_id)
         for column in columns:
-            column_id = column["id"]
-            column_name = column["name"]
+            column_id = column.get("id")
+            column_name = column.get("name")
             project_structure[project_id]["columns"][column_id] = {"column_name": column_name, "cards": []}
 
             cards = get_cards(column_id)
