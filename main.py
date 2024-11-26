@@ -142,7 +142,7 @@ def issue_project_mapping():
         # print(f"Found {len(projects)} project(s).")
 
         for project in projects:
-            count=0
+            # count=0
             project_name = project['title']
             # print(f"\n- Project: {project_name} (ID: {project['id']})")
 
@@ -155,7 +155,7 @@ def issue_project_mapping():
                     issue_title = card_content.get("title")
 
                     if issue_number and issue_title:
-                        print(f"  - Issue #{issue_number}: {issue_title}")
+                        # print(f"  - Issue #{issue_number}: {issue_title}")
                         if issue_number: 
                             if issue_number not in issue_to_projects:
                                 issue_to_projects[issue_number] = []
@@ -168,7 +168,7 @@ def issue_project_mapping():
                 
             else:
                 print("  Failed to fetch project details.")
-            print(count)
+            # print(count)
             time.sleep(10)
     
     return issue_to_projects
