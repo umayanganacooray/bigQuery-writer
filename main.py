@@ -5,6 +5,7 @@ import base64
 import binascii
 import json
 import requests
+import time
 from datetime import datetime
 from google.cloud import bigquery
 from google.oauth2 import service_account  
@@ -12,6 +13,7 @@ from google.oauth2 import service_account
 scopes = ["https://www.googleapis.com/auth/cloud-platform", "https://www.googleapis.com/auth/bigquery"]
 project = os.getenv("CHOREO_BIGQUERY_GCLOUD_PROJECT")
 dataset = os.getenv("CHOREO_BIGQUERY_GCLOUD_DATASET")
+GITHUB_GRAPHQL_API = "https://api.github.com/graphql"
 serviceURL = os.getenv("CHOREO_GITHUB_SERVICEURL")
 GITHUB_PAT = os.getenv("CHOREO_GITHUB_GITHUB_PAT")
 HEADERS = {"Authorization": f"Bearer {GITHUB_PAT}"}
@@ -34,77 +36,143 @@ account_info = get_gcloud_account_info()
 credentials = service_account.Credentials.from_service_account_info(account_info, scopes=scopes)
 client = bigquery.Client(project=project, credentials=credentials)
         
-def get_projects():
-    url = f"https://api.github.com/repos/{OWNER}/{REPO}/projects"
-    response = requests.get(url, headers=HEADERS)
-    return response.json()
 
-def get_columns(project_id):
-    url = f"https://api.github.com/projects/{project_id}/columns"
-    response = requests.get(url, headers=HEADERS)
-    return response.json()
+def execute_graphql_query(query, variables=None):
+    """
+    Executes a GraphQL query against the GitHub API.
+    """
+    response = requests.post(
+        GITHUB_GRAPHQL_API,
+        headers=HEADERS,
+        json={"query": query, "variables": variables}
+    )
+    if response.status_code == 200:
+        return response.json()
+    else:
+        print(f"GraphQL query failed with status code {response.status_code}: {response.text}")
+        raise Exception("GraphQL query failed")
 
-def get_cards(column_id):
-    url = f"https://api.github.com/projects/columns/{column_id}/cards"
-    response = requests.get(url, headers=HEADERS)
-    return response.json()
+def fetch_all_projects_with_graphql(owner, repo):
+    query = """
+    query($owner: String!, $repo: String!, $cursor: String) {
+      repository(owner: $owner, name: $repo) {
+        projectsV2(first: 20, after: $cursor) {
+          nodes {
+            id
+            title
+          }
+          pageInfo {
+            endCursor
+            hasNextPage
+          }
+        }
+      }
+    }
+    """
+    variables = {"owner": owner, "repo": repo, "cursor": None}
+    projects = []
 
-def extract_issue_id(content_url):
-    if not content_url: 
-        return None
-    match = re.search(r"/issues/(\d+)$", content_url)
-    if match:
-        return int(match.group(1))
-    return None
+    while True:
+        result = execute_graphql_query(query, variables)
+        projects_data = result.get("data", {}).get("repository", {}).get("projectsV2", {})
+        projects.extend(projects_data.get("nodes", []))
 
-def build_project_structure():
-    project_structure = {}
-    projects = get_projects()
-    for project in projects:
-        project_id = project.get("id")
-        project_name = project.get("name")
-        project_structure[project_id] = {"project_name": project_name, "columns": {}}
+        # Pagination handling
+        page_info = projects_data.get("pageInfo", {})
+        if page_info.get("hasNextPage"):
+            variables["cursor"] = page_info.get("endCursor")
+        else:
+            break
 
-        columns = get_columns(project_id)
-        for column in columns:
-            column_id = column.get("id")
-            column_name = column.get("name")
-            project_structure[project_id]["columns"][column_id] = {"column_name": column_name, "cards": []}
+    return projects
 
-            cards = get_cards(column_id)
-            for card in cards:
-                content_url = card.get("content_url")
-                issue_id = extract_issue_id(content_url)
-
-                card_info = {
-                    "id": card["id"],
-                    "issue_id": issue_id
+def fetch_project_details(project_id):
+    query = """
+    query($projectId: ID!, $cursor: String) {
+      node(id: $projectId) {
+        ... on ProjectV2 {
+          id
+          title
+          items(first: 100, after: $cursor) {
+            edges {
+              node {
+                id
+                content {
+                  ... on Issue {
+                    id
+                    number
+                    title
+                  }
                 }
-                project_structure[project_id]["columns"][column_id]["cards"].append(card_info)
+              }
+            }
+            pageInfo {
+              endCursor
+              hasNextPage
+            }
+          }
+        }
+      }
+    }
+    """
+    variables = {"projectId": project_id, "cursor": None}
+    all_items = []
 
-    return project_structure
+    while True:
+        result = execute_graphql_query(query, variables)
+        items = result.get("data", {}).get("node", {}).get("items", {}).get("edges", [])
+        all_items.extend(items)
+
+        # Pagination handling
+        page_info = result.get("data", {}).get("node", {}).get("items", {}).get("pageInfo", {})
+        if page_info.get("hasNextPage"):
+            variables["cursor"] = page_info.get("endCursor")
+        else:
+            break
+
+    return all_items
+
 
 def issue_project_mapping():
-    project_structure = build_project_structure()
     
-    issue_to_projects = {}
-    
-    for project_id, project_data in project_structure.items():
-        project_name = project_data["project_name"]
-        
-        for column_id, column_data in project_data["columns"].items():
-            for card in column_data["cards"]:
-                issue_id = card.get("issue_id")
+    issue_to_projects = {} 
+    # Fetch all projects
+    projects = fetch_all_projects_with_graphql(OWNER, REPO)
+    if projects:
+        # print(f"Found {len(projects)} project(s).")
+
+        for project in projects:
+            count=0
+            project_name = project['title']
+            # print(f"\n- Project: {project_name} (ID: {project['id']})")
+
+            # Fetch columns and cards for the project
+            project_details = fetch_project_details(project["id"])
+            if project_details:
+                for item in project_details:
+                    card_content = item["node"].get("content", {})
+                    issue_number = card_content.get("number")
+                    issue_title = card_content.get("title")
+
+                    if issue_number and issue_title:
+                        print(f"  - Issue #{issue_number}: {issue_title}")
+                        if issue_number: 
+                            if issue_number not in issue_to_projects:
+                                issue_to_projects[issue_number] = []
+                            
+                            if project_name not in issue_to_projects[issue_number]:
+                                issue_to_projects[issue_number].append(project_name)
+                        count+=1
+                    else:
+                        print("  - Card without issue content.")
                 
-                if issue_id: 
-                    if issue_id not in issue_to_projects:
-                        issue_to_projects[issue_id] = []
-                    
-                    if project_name not in issue_to_projects[issue_id]:
-                        issue_to_projects[issue_id].append(project_name)
+            else:
+                print("  Failed to fetch project details.")
+            print(count)
+            time.sleep(10)
     
     return issue_to_projects
-
+   
 def get_projects_names_for_issue(issue_to_projects, issue_id):
     if issue_id in issue_to_projects:
         return issue_to_projects[issue_id]
@@ -129,7 +197,7 @@ def transform_issue(issue, projects):
         "closed_time" : parse_datetime(issue.get("closed_at")),
         "projects" : projects
     }
-
+        
 def insert_data(rows):
     table = f"{project}.{dataset}.ISSUE"
     if len(rows) == 0:
@@ -147,7 +215,7 @@ def insert_data(rows):
     load_job.result()
 
     print("Rows inserted successfully.")  
-    
+   
     
 def main():
     
