@@ -1,11 +1,9 @@
-import re
 import sys
 import os
 import base64
 import binascii
 import json
 import requests
-import time
 from datetime import datetime
 from google.cloud import bigquery
 from google.oauth2 import service_account  
@@ -13,10 +11,12 @@ from google.oauth2 import service_account
 scopes = ["https://www.googleapis.com/auth/cloud-platform", "https://www.googleapis.com/auth/bigquery"]
 project = os.getenv("CHOREO_BIGQUERY_GCLOUD_PROJECT")
 dataset = os.getenv("CHOREO_BIGQUERY_GCLOUD_DATASET")
-GITHUB_GRAPHQL_API = "https://api.github.com/graphql"
 serviceURL = os.getenv("CHOREO_GITHUB_SERVICEURL")
 GITHUB_PAT = os.getenv("CHOREO_GITHUB_GITHUB_PAT")
 HEADERS = {"Authorization": f"Bearer {GITHUB_PAT}"}
+
+graphql_path = "/graphql"
+GITHUB_GRAPHQL_API = f"{serviceURL}{graphql_path}"
 
 OWNER = "wso2-enterprise"
 REPO = "choreo"
@@ -139,12 +139,8 @@ def issue_project_mapping():
     # Fetch all projects
     projects = fetch_all_projects_with_graphql(OWNER, REPO)
     if projects:
-        # print(f"Found {len(projects)} project(s).")
-
         for project in projects:
-            # count=0
             project_name = project['title']
-            # print(f"\n- Project: {project_name} (ID: {project['id']})")
 
             # Fetch columns and cards for the project
             project_details = fetch_project_details(project["id"])
@@ -155,21 +151,15 @@ def issue_project_mapping():
                     issue_title = card_content.get("title")
 
                     if issue_number and issue_title:
-                        # print(f"  - Issue #{issue_number}: {issue_title}")
-                        if issue_number: 
-                            if issue_number not in issue_to_projects:
-                                issue_to_projects[issue_number] = []
+                        if issue_number not in issue_to_projects:
+                            issue_to_projects[issue_number] = []
                             
-                            if project_name not in issue_to_projects[issue_number]:
-                                issue_to_projects[issue_number].append(project_name)
-                        count+=1
+                        if project_name not in issue_to_projects[issue_number]:
+                            issue_to_projects[issue_number].append(project_name)
                     else:
-                        print("  - Card without issue content.")
-                
+                        print("  - Card without issue content.")  
             else:
                 print("  Failed to fetch project details.")
-            # print(count)
-            time.sleep(10)
     
     return issue_to_projects
    
@@ -195,7 +185,8 @@ def transform_issue(issue, projects):
         "state" : issue.get("state"),
         # "state_reason" : issue.get("state_reason"),
         "closed_time" : parse_datetime(issue.get("closed_at")),
-        "projects" : projects
+        "projects" : projects,
+        "url" : issue.get("html_url")
     }
         
 def insert_data(rows):
