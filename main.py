@@ -140,24 +140,25 @@ def issue_project_mapping():
     projects = fetch_all_projects_with_graphql(OWNER, REPO)
     if projects:
         for project in projects:
-            project_name = project['title']
+            if project['closed'] == False:
+                project_name = project['title']
 
-            # Fetch columns and cards for the project
-            project_details = fetch_project_details(project["id"])
-            if project_details:
-                for item in project_details:
-                    card_content = item["node"].get("content", {})
-                    issue_number = card_content.get("number")
-                    issue_title = card_content.get("title")
+                # Fetch columns and cards for the project
+                project_details = fetch_project_details(project["id"])
+                if project_details:
+                    for item in project_details:
+                        card_content = item["node"].get("content", {})
+                        issue_number = card_content.get("number")
+                        issue_title = card_content.get("title")
 
-                    if issue_number and issue_title:
-                        if issue_number not in issue_to_projects:
-                            issue_to_projects[issue_number] = []
-                            
-                        if project_name not in issue_to_projects[issue_number]:
-                            issue_to_projects[issue_number].append(project_name)
-            else:
-                print("Failed to fetch project details.", project_name)
+                        if issue_number and issue_title:
+                            if issue_number not in issue_to_projects:
+                                issue_to_projects[issue_number] = []
+                                
+                            if project_name not in issue_to_projects[issue_number]:
+                                issue_to_projects[issue_number].append(project_name)
+                else:
+                    print("Failed to fetch project details.", project_name)
     
     return issue_to_projects
    
