@@ -156,10 +156,8 @@ def issue_project_mapping():
                             
                         if project_name not in issue_to_projects[issue_number]:
                             issue_to_projects[issue_number].append(project_name)
-                    else:
-                        print("  - Card without issue content.")  
             else:
-                print("  Failed to fetch project details.")
+                print("Failed to fetch project details.", project_name)
     
     return issue_to_projects
    
