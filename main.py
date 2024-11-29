@@ -60,6 +60,7 @@ def fetch_all_projects_with_graphql(owner, repo):
           nodes {
             id
             title
+            closed
           }
           pageInfo {
             endCursor
@@ -93,6 +94,7 @@ def fetch_project_details(project_id):
         ... on ProjectV2 {
           id
           title
+          closed
           items(first: 100, after: $cursor) {
             edges {
               node {
